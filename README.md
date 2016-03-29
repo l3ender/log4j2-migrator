@@ -10,12 +10,12 @@ No guarantee on output correction. Please review and test the generated configur
 Please report any issues at https://github.com/mulesoft-labs/log4j2-migrator/issues
 
 ## Usage
-groovy log4jmigrator.grovvy pathname-to-log4j.properties
+groovy log4j2migrator.groovy pathname-to-log4j.properties
 
 ## Example
 
 ```
-groovy log4jmigrator.groovy test/log4j.properties > log4j2.xml
+groovy log4j2migrator.groovy test/log4j.properties > log4j2.xml
 
 ```
 
