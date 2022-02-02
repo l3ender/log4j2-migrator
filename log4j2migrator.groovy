@@ -4,6 +4,7 @@ cli.with {
     o(longOpt: 'output', 'file to write the output', required: false, args: 1)
     d(longOpt: 'debug', 'print debug information', required: false )
     i(longOpt: 'interpolate', 'substitue parameters', required: false)
+    a(longOpt: 'async', 'use async loggers', required: false, args: 1, defaultValue: "false", type: Boolean)
 }
 
 OptionAccessor opt = cli.parse(args)
@@ -30,6 +31,11 @@ if (opt.d) {
 @groovy.transform.Field def interpolate
 if (opt.i) {
     interpolate = opt.i
+}
+
+@groovy.transform.Field def async
+if (opt.a) {
+    async = opt.a
 }
 
 def extraArguments = opt.arguments()
@@ -117,7 +123,7 @@ def parse(properties) {
 
 def generate(bindings) {
     def xmlWriter = new StringWriter()
-    def xmlMarkup = new groovy.xml.MarkupBuilder(xmlWriter)
+    def xmlMarkup = new groovy.xml.MarkupBuilder(new IndentPrinter(xmlWriter, "\t"))
     xmlMarkup.setOmitNullAttributes(true)
     xmlMarkup.setDoubleQuotes(true)
     xmlMarkup.mkp.xmlDeclaration(version: '1.0', encoding: 'utf-8')
@@ -151,7 +157,11 @@ def generate(bindings) {
       def additivites = bindings['additivities']
       'Loggers' {
                 bindings['loggers'].each { name, value ->
-                    'AsyncLogger' (name:name, level:value[0].trim(), additivity: additivites[name] ?: 'false') {
+                    def loggerName = 'Logger'
+                    if (async) {
+                        loggerName = 'AsyncLogger'
+                    }
+                    "$loggerName" (name:name, level:value[0].trim(), additivity: additivites[name] ?: 'false') {
                         if (value.size() > 1) {
                             def loggerAppenders = value[1..-1]
                             loggerAppenders.each {
@@ -160,12 +170,18 @@ def generate(bindings) {
                         }
                     }
                 }
-                'AsyncRoot' (level:bindings['rootLevel']) {
+                def loggerName = 'Root'
+                if (async) {
+                    loggerName = 'AsyncRoot'
+                }
+                "$loggerName" (level:bindings['rootLevel']) {
                     bindings['rootAppenders'].each { name ->
                         AppenderRef (ref:name.trim())
                     }
                 }
-      }
+            }
         }
+
+    xmlWriter.append(System.getProperty("line.separator"))
     return xmlWriter.toString()
 }
