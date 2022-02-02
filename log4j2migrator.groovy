@@ -1,4 +1,4 @@
-def cli = new CliBuilder(usage: 'log4j2-migrator [options] input-file')
+def cli = new groovy.cli.commons.CliBuilder(usage: 'log4j2-migrator [options] input-file')
 cli.with {
     h(longOpt: 'help', 'usage information', required: false)
     o(longOpt: 'output', 'file to write the output', required: false, args: 1)
@@ -7,7 +7,7 @@ cli.with {
     a(longOpt: 'async', 'use async loggers', required: false, args: 1, defaultValue: "false", type: Boolean)
 }
 
-OptionAccessor opt = cli.parse(args)
+groovy.cli.commons.OptionAccessor opt = cli.parse(args)
 if (!opt) {
     return
 }
