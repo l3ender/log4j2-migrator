@@ -156,31 +156,31 @@ def generate(bindings) {
       }
       def additivites = bindings['additivities']
       'Loggers' {
-                bindings['loggers'].each { name, value ->
-                    def loggerName = 'Logger'
-                    if (async) {
-                        loggerName = 'AsyncLogger'
-                    }
-                    "$loggerName" (name:name, level:value[0].trim(), additivity: additivites[name] ?: 'false') {
-                        if (value.size() > 1) {
-                            def loggerAppenders = value[1..-1]
-                            loggerAppenders.each {
-                                'AppenderRef' (ref:it.trim())
-                            }
+            bindings['loggers'].each { name, value ->
+                def loggerName = 'Logger'
+                if (async) {
+                    loggerName = 'AsyncLogger'
+                }
+                "$loggerName" (name:name, level:value[0].trim(), additivity: additivites[name] ?: 'false') {
+                    if (value.size() > 1) {
+                        def loggerAppenders = value[1..-1]
+                        loggerAppenders.each {
+                            'AppenderRef' (ref:it.trim())
                         }
                     }
                 }
-                def loggerName = 'Root'
-                if (async) {
-                    loggerName = 'AsyncRoot'
-                }
-                "$loggerName" (level:bindings['rootLevel']) {
-                    bindings['rootAppenders'].each { name ->
-                        AppenderRef (ref:name.trim())
-                    }
+            }
+            def loggerName = 'Root'
+            if (async) {
+                loggerName = 'AsyncRoot'
+            }
+            "$loggerName" (level:bindings['rootLevel']) {
+                bindings['rootAppenders'].each { name ->
+                    AppenderRef (ref:name.trim())
                 }
             }
         }
+    }
 
     xmlWriter.append(System.getProperty("line.separator"))
     return xmlWriter.toString()
