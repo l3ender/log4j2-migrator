@@ -178,11 +178,7 @@ def generate(bindings) {
                     if (async) {
                         loggerName = 'AsyncLogger'
                     }
-                    def logLevel = value[0].trim()
-                    def propertyPlaceholderMatch = logLevel =~ /\$\{(.*?)\}/
-                    if (propertyPlaceholderMatch) {
-                        logLevel = "\${sys:${propertyPlaceholderMatch.group(1)}}"
-                    }
+                    def logLevel = getLogLevel(value[0].trim())
                     "$loggerName" (name: name, level: logLevel, additivity: additivites[name] ?: 'false') {
                         if (value.size() > 1) {
                             def loggerAppenders = value[1..-1]
@@ -196,11 +192,7 @@ def generate(bindings) {
                 if (async) {
                     loggerName = 'AsyncRoot'
                 }
-                def logLevel = bindings['rootLevel']
-                def propertyPlaceholderMatch = logLevel =~ /\$\{(.*?)\}/
-                if (propertyPlaceholderMatch) {
-                    logLevel = "\${sys:${propertyPlaceholderMatch.group(1)}}"
-                }
+                def logLevel = getLogLevel(bindings['rootLevel'])
                 "$loggerName" (level: logLevel) {
                     bindings['rootAppenders'].each { name ->
                         AppenderRef (ref:name.trim())
@@ -211,4 +203,12 @@ def generate(bindings) {
 
     xmlWriter.append(System.getProperty("line.separator"))
     return xmlWriter.toString()
+}
+
+def getLogLevel(logLevel) {
+    def propertyPlaceholderMatch = logLevel =~ /\$\{(.*?)\}/
+    if (propertyPlaceholderMatch) {
+        logLevel = "\${sys:${propertyPlaceholderMatch.group(1)}}"
+    }
+    return logLevel
 }
