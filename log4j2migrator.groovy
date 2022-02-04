@@ -196,7 +196,12 @@ def generate(bindings) {
                 if (async) {
                     loggerName = 'AsyncRoot'
                 }
-                "$loggerName" (level:bindings['rootLevel']) {
+                def logLevel = bindings['rootLevel']
+                def propertyPlaceholderMatch = logLevel =~ /\$\{(.*?)\}/
+                if (propertyPlaceholderMatch) {
+                    logLevel = "\${sys:${propertyPlaceholderMatch.group(1)}}"
+                }
+                "$loggerName" (level: logLevel) {
                     bindings['rootAppenders'].each { name ->
                         AppenderRef (ref:name.trim())
                     }
