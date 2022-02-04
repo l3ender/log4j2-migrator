@@ -68,6 +68,7 @@ def parse(properties) {
     def rootLevel
     def rootAppenders
     def params = [:]
+    def systemProperties = [:]
 
     properties.each { key, value ->
         value = value.trim()
@@ -112,12 +113,21 @@ def parse(properties) {
             def rootCategories = value.tokenize( ',' )
             rootLevel = rootCategories[0]
             rootAppenders = rootCategories.size() > 1 ? rootCategories[1..-1] : []
+        } else if (value in ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR']) {
+            systemProperties[key] = value
         } else {
             System.err.println "WARNING: unknown property ${key} ignored!"
         }
     }
 
-    def values = ['rootLevel': rootLevel, 'rootAppenders':rootAppenders, 'appenders': appenders, 'loggers': loggers, 'additivities': additivities]
+    def values = [
+        'rootLevel': rootLevel,
+        'rootAppenders': rootAppenders,
+        'appenders': appenders,
+        'loggers': loggers,
+        'additivities': additivities,
+        'systemProperties': systemProperties,
+    ]
     return values
 }
 
@@ -129,6 +139,13 @@ def generate(bindings) {
     xmlMarkup.mkp.xmlDeclaration(version: '1.0', encoding: 'utf-8')
     xmlMarkup
         .'Configuration' {
+            if (bindings['systemProperties']) {
+                'Properties' {
+                    bindings['systemProperties'].each { name, value ->
+                        'Property' name: name, value
+                    }
+                }
+            }
             'Appenders' {
                 bindings['appenders'].each { name, values ->
                     if (values['type'] == 'Console') {
@@ -153,34 +170,39 @@ def generate(bindings) {
                         }
                     }
                 }
-      }
-      def additivites = bindings['additivities']
-      'Loggers' {
-            bindings['loggers'].each { name, value ->
-                def loggerName = 'Logger'
-                if (async) {
-                    loggerName = 'AsyncLogger'
-                }
-                "$loggerName" (name:name, level:value[0].trim(), additivity: additivites[name] ?: 'false') {
-                    if (value.size() > 1) {
-                        def loggerAppenders = value[1..-1]
-                        loggerAppenders.each {
-                            'AppenderRef' (ref:it.trim())
+            }
+            def additivites = bindings['additivities']
+            'Loggers' {
+                bindings['loggers'].each { name, value ->
+                    def loggerName = 'Logger'
+                    if (async) {
+                        loggerName = 'AsyncLogger'
+                    }
+                    def logLevel = value[0].trim()
+                    def propertyPlaceholderMatch = logLevel =~ /\$\{(.*?)\}/
+                    if (propertyPlaceholderMatch) {
+                        logLevel = "\${sys:${propertyPlaceholderMatch.group(1)}}"
+                    }
+                    "$loggerName" (name: name, level: logLevel, additivity: additivites[name] ?: 'false') {
+                        if (value.size() > 1) {
+                            def loggerAppenders = value[1..-1]
+                            loggerAppenders.each {
+                                'AppenderRef' (ref:it.trim())
+                            }
                         }
                     }
                 }
-            }
-            def loggerName = 'Root'
-            if (async) {
-                loggerName = 'AsyncRoot'
-            }
-            "$loggerName" (level:bindings['rootLevel']) {
-                bindings['rootAppenders'].each { name ->
-                    AppenderRef (ref:name.trim())
+                def loggerName = 'Root'
+                if (async) {
+                    loggerName = 'AsyncRoot'
+                }
+                "$loggerName" (level:bindings['rootLevel']) {
+                    bindings['rootAppenders'].each { name ->
+                        AppenderRef (ref:name.trim())
+                    }
                 }
             }
         }
-    }
 
     xmlWriter.append(System.getProperty("line.separator"))
     return xmlWriter.toString()
