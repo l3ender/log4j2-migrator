@@ -137,6 +137,7 @@ def generate(bindings) {
     xmlMarkup.setOmitNullAttributes(true)
     xmlMarkup.setDoubleQuotes(true)
     xmlMarkup.mkp.xmlDeclaration(version: '1.0', encoding: 'utf-8')
+    xmlMarkup.mkp.yieldUnescaped('<!DOCTYPE Configuration>' + System.getProperty("line.separator"))
     xmlMarkup
         .'Configuration' {
             if (bindings['systemProperties']) {
